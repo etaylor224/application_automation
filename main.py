@@ -1,8 +1,8 @@
-import pandas as pd
 import yaml
 from resume_reader import resume_parser
-from job_scraper import api_scrape, job_parser_for_df, job_parser
-from resume_matcher import new_matching, matches_to_files
+from job_scraper import api_scrape, job_parser
+from resume_matcher import new_matching
+from db_helper import insert_data
 
 
 #TODO create database tables for information
@@ -35,18 +35,25 @@ def run_matching(title):
 
     print(f"Found {len(high_score_job)} jobs with a rating over 50")
     print(f"Found {len(low_score_job)} jobs with a rating less than 50")
-    high_prep = job_parser_for_df(high_score_job)
-    high_job = matches_to_files(high_prep)
-    low_prep = job_parser_for_df(low_score_job)
-    low_score = matches_to_files(low_prep)
+    high_prep = job_parser(high_score_job)
+    try:
+        insert_data("high_results", high_prep)
+        print("Success")
+        print(f"Inserted {len(high_prep)} entries")
+    except Exception as e:
+        print("Error")
+        print(e)
+    low_prep = job_parser(low_score_job)
+    try:
+        insert_data("low_results", low_prep)
+        print("Success")
+        print(f"Inserted {len(low_prep)} low entries")
+    except Exception as e:
+        print("Error")
+        print(e)
 
-    print("Creating Excel file")
-    with pd.ExcelWriter(f"{title}-positions.xlsx", engine="openpyxl") as w:
-        high_job.to_excel(w, sheet_name="High Rating", index=False)
-        low_score.to_excel(w, sheet_name="Low Rating", index=False)
+    # print("Creating Excel file")
+    # with pd.ExcelWriter(f"{title}-positions.xlsx", engine="openpyxl") as w:
+    #     high_job.to_excel(w, sheet_name="High Rating", index=False)
+    #     low_score.to_excel(w, sheet_name="Low Rating", index=False)
     return
-
-if __name__ == "__main__":
-    for title in config['job_titles']:
-        print(f"Running search for {title}")
-        run_matching(title)
