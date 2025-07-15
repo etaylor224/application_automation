@@ -22,8 +22,41 @@ document.addEventListener("DOMContentLoaded", () => {
       populatePositionsTable();
     }
   });
+    const backToTopBtn = document.getElementById("backToTop");
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.style.display = "block";
+    } else {
+      backToTopBtn.style.display = "none";
+    }
+  });
+
+  backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
 });
   </script>
+
+  <style>
+  #backToTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    display: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    font-size: 20px;
+    text-align: center;
+  }
+</style>
+
 </head>
 <body class="container py-5">
   <h1 class="mb-4">Resume Matcher Web App</h1>
@@ -32,7 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
   <section id="landing" class="mb-5">
     <h2>Welcome</h2>
     <p>Use this app to view, manage, and apply to job postings that match your resume.</p>
-    <a href="#available" class="btn btn-primary">View Available Jobs</a>
+    <a href="#high-rated-table" class="btn btn-primary">View High Rated Jobs</a>
+    <a href="#low-rated-table" class="btn btn-primary">View Low Rated Jobs</a>
     <a href="#applied" class="btn btn-secondary">View Applied Jobs</a>
     <a href="#positions" class="btn btn-info">Manage Job Titles</a>
     <button id="api-trigger" class="btn btn-warning">Refresh API Data</button>
@@ -112,6 +146,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </tbody>
     </table>
   </section>
+
+  <button id="backToTop" class="btn btn-secondary">↑ Top</button>
+
 </body>
 
 <script>
