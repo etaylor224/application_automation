@@ -217,7 +217,10 @@ document.getElementById("add-position-btn")?.addEventListener("click", async () 
   const locationInput = document.getElementById("new-location-input");
 
   const title = positionInput.value.trim();
-  const location = locationInput.value.trim();
+  let location = locationInput.value.trim();
+  if (!location) {
+    location = "USA";
+  }
 
   if (title && location) {
     // Send to backend
