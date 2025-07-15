@@ -27,7 +27,6 @@ def insert_data(table: str, data: list):
                 for entry in data:
                     already_exists = check_for_duplicates(cur, table, entry)
                     if not already_exists:
-                        print("not in db")
                         execute_batch(cur,
                                       f"""
                             INSERT INTO {table}(
@@ -55,8 +54,6 @@ def insert_data(table: str, data: list):
                             """,
                                       data)
                         conn.commit()
-                    else:
-                        print("Entry exists")
             except Exception as e:
                 print("Error")
                 print(e)
@@ -82,7 +79,6 @@ def insert_into_applied(data: list):
                     VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """, drop_old_id)
                 conn.commit()
-                print("INSERTED")
                 return True
             except Exception as e:
                 print("Error")
@@ -94,7 +90,7 @@ def remove_row(table: str, row_id: int):
         with conn.cursor() as cur:
             cur.execute(f"""
             DELETE FROM {table} WHERE id = %s
-            """, row_id)
+            """, (row_id,))
         conn.commit()
 
 
@@ -110,7 +106,7 @@ def populate_table_call(table):
 def get_row_by_id(table: str, row_id: int):
     with psy.connect(_pg_url) as conn:
         with conn.cursor() as cur:
-            cur.execute(f"SELECT * FROM public.{table} WHERE id = %s", row_id)
+            cur.execute(f"SELECT * FROM public.{table} WHERE id = %s", (row_id,))
             return cur.fetchall()
 
 
@@ -174,4 +170,3 @@ def positions_data_helper(data):
             data_dict[column_names[i]] = rows[i]
         cleaned.append(data_dict)
     return cleaned
-
