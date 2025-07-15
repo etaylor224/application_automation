@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Matcher App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script defer>
+document.addEventListener("DOMContentLoaded", () => {
+  populateAvailableTable();
+  populateAppliedTable();
+  populatePositionsTable();
+
+  document.body.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("apply-btn")) {
+      const id = e.target.dataset.id;
+      const source = e.target.dataset.source;
+      await fetch(`/api/apply/${source}/${id}`, { method: "POST" });
+      populateAvailableTable();
+      populateAppliedTable();
+      populatePositionsTable();
+    }
+  });
+});
+  </script>
+</head>
+<body class="container py-5">
+  <h1 class="mb-4">Resume Matcher Web App</h1>
+
+  <!-- Landing Page -->
+  <section id="landing" class="mb-5">
+    <h2>Welcome</h2>
+    <p>Use this app to view, manage, and apply to job postings that match your resume.</p>
+    <a href="#available" class="btn btn-primary">View Available Jobs</a>
+    <a href="#applied" class="btn btn-secondary">View Applied Jobs</a>
+    <a href="#positions" class="btn btn-info">Manage Job Titles</a>
+    <button id="api-trigger" class="btn btn-warning">Refresh API Data</button>
+  </section>
+
+  <!-- Available Jobs -->
+  <section id="available" class="mb-5">
+    <h2>Available Positions</h2>
+    <h4>High Rated</h4>
+    <table class="table" id="high-rated-table">
+      <thead><tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Employer</th>
+        <th>Employer Website</th>
+        <th>Employment Type</th>
+        <th>Posting Publisher</th>
+        <th>Link</th>
+        <th style="min-height: 200px, min-width: 200px">Description</th>
+        <th>Remote</th>
+        <th>Score</th>
+        <th>Action</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+
+    <h4>Low Rated</h4>
+    <table class="table" id="low-rated-table">
+      <thead><tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Employer</th>
+        <th>Employer Website</th>
+        <th>Employment Type</th>
+        <th>Posting Publisher</th>
+        <th>Link</th>
+        <th style="min-height: 200px, min-width: 200px">Description</th>
+        <th>Remote</th>
+        <th>Score</th>
+        <th>Action</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Applied Jobs -->
+  <section id="applied" class="mb-5">
+    <h2>Applied Positions</h2>
+    <table class="table" id="applied-table">
+      <thead><tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Employer</th>
+        <th>Employer Website</th>
+        <th>Employment Type</th>
+        <th>Posting Publisher</th>
+        <th>Link</th>
+        <th>Description</th>
+        <th>Remote</th>
+        <th>Score</th>
+        <th>Action</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Position Titles -->
+  <section id="positions">
+    <h2>Manage Job Titles to Search For</h2>
+    <div class="mb-3">
+      <input type="text" id="new-position-input" class="form-control d-inline w-50" placeholder="New Position Title">
+      <input type="text" id="new-location-input" class="form-control d-inline w-50" placeholder="Location">
+      <button id="add-position-btn" class="btn btn-primary">Add</button>
+    </div>
+    <table class="table" id="position-table">
+      <thead><tr><th>ID</th><th>Title</th><th>Location</th><th>Action</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</body>
+
+<script>
+async function populateAvailableTable() {
+  const high = await fetch("/api/high-rated").then(r => r.json());
+  const low = await fetch("/api/low-rated").then(r => r.json());
+
+  const highTable = document.getElementById("high-rated-table").querySelector("tbody");
+  const lowTable = document.getElementById("low-rated-table").querySelector("tbody");
+  highTable.innerHTML = "";
+  lowTable.innerHTML = "";
+
+  high.forEach(job => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${job.id}</td>
+      <td>${job.job_title}</td>
+      <td>${job.employer_name}</td>
+      <td>${job.employer_web}</td>
+      <td>${job.employment_type}</td>
+      <td>${job.publisher}</td>
+      <td>${job.apply_link}</td>
+      <td><div style="max-height: 100px; overflow-y: auto;">${job.job_description}</td>
+      <td>${job.remote}</td>
+      <td>${job.score}</td>
+      <td><button class="btn btn-success btn-sm apply-btn" data-id="${job.id}" data-source="high_results">Apply</button></td>
+    `;
+    highTable.appendChild(row);
+  });
+
+  low.forEach(job => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${job.id}</td>
+      <td>${job.job_title}</td>
+      <td>${job.employer_name}</td>
+      <td>${job.employer_web}</td>
+      <td>${job.employment_type}</td>
+      <td>${job.publisher}</td>
+      <td>${job.apply_link}</td>
+      <td><div style="max-height: 100px; overflow-y: auto;">${job.job_description}</td>
+      <td>${job.remote}</td>
+      <td>${job.score}</td>
+      <td><button class="btn btn-success btn-sm apply-btn" data-id="${job.id}" data-source="low_results">Apply</button></td>
+    `;
+    lowTable.appendChild(row);
+  });
+}
+
+async function populateAppliedTable() {
+  const jobs = await fetch("/api/applied").then(r => r.json());
+  const table = document.getElementById("applied-table").querySelector("tbody");
+  table.innerHTML = "";
+
+  jobs.forEach(job => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${job.id}</td>
+      <td>${job.job_title}</td>
+      <td>${job.employer_name}</td>
+      <td>${job.employer_web}</td>
+      <td>${job.employment_type}</td>
+      <td>${job.publisher}</td>
+      <td>${job.apply_link}</td>
+      <td><div style="max-height: 100px; overflow-y: auto;">${job.job_description}</td>
+      <td>${job.remote}</td>
+      <td>${job.score}</td>
+      <td class="btn btn-sm btn-outline-primary remove-row-btn", data-id="${job.id}", data-source="applied">Remove Job</td>
+    `;
+    table.appendChild(row);
+  });
+}
+document.body.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("remove-row-btn")) {
+    const id = e.target.dataset.id;
+    const source = e.target.dataset.source;
+    await fetch(`/api/remove/${source}/${id}`, { method: "POST" });
+    populateAvailableTable();
+    populateAppliedTable();
+    populatePositionsTable();
+  }
+});
+
+async function populatePositionsTable() {
+  const pos = await fetch("/api/positions").then(r => r.json());
+  const table = document.getElementById("positions").querySelector("tbody");
+  table.innerHTML = "";
+
+  pos.forEach(query => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${query.id}</td>
+      <td>${query.query}</td>
+      <td>${query.location}</td>
+      <td class="btn btn-sm btn-outline-primary remove-row-btn", data-id="${query.id}", data-source="searchquery">Remove Search</td>
+    `;
+    table.appendChild(row);
+  });
+}
+
+document.getElementById("add-position-btn")?.addEventListener("click", async () => {
+  const positionInput = document.getElementById("new-position-input");
+  const locationInput = document.getElementById("new-location-input");
+
+  const title = positionInput.value.trim();
+  const location = locationInput.value.trim();
+
+  if (title && location) {
+    // Send to backend
+    const res = await fetch("/api/positions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table: "searchquery", position: title, location: location })
+    });
+
+    if (res.ok) {
+      // Clear input and reload table
+      positionInput.value = "";
+      locationInput.value = "";
+      populateTable("/api/positions", "position-table");
+    } else {
+      alert("Failed to add position");
+    }
+  }
+});
+document.getElementById("api-trigger")?.addEventListener("click", async () => {
+  const res = await fetch("/api/run-script", { method: "POST" });
+  if (res.ok) {
+    alert("Script triggered successfully!");
+  } else {
+    alert("Failed to trigger the script.");
+  }
+});
+</script>
+
+</html>
