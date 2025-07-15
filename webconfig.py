@@ -1,9 +1,12 @@
-from flask import Flask, render_template
-import sqlalchemy
+from flask import Flask, render_template, request, jsonify
 import db_helper
+import yaml
+import main
 
 app = Flask(__name__)
 
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 @app.route("/", methods=["GET", "POST"])
 def home_page():
@@ -22,13 +25,15 @@ def position_manager():
             print(f"Error: {e}")
             return "Error", 500
     if request.method == "GET":
-        print("position call")
-        #db_helper.populate_table_call("searchquery")
-
+        titles = db_helper.populate_table_call("searchquery")
+        if len(titles) > 0:
+            data = db_helper.positions_data_helper(titles)
+            return jsonify(data), 200
+        else:
+            return [{}], 204
 
 @app.route("/api/high-rated")
 def high_rated_api():
-    print("high table call")
     jobs = db_helper.populate_table_call("high_results")
     if len(jobs) > 0:
         data = db_helper.job_data_helper(jobs)
@@ -38,7 +43,6 @@ def high_rated_api():
 
 @app.route("/api/low-rated")
 def low_rated_api():
-    print("low table call")
     jobs = db_helper.populate_table_call("low_results")
     if len(jobs) > 0:
         data = db_helper.job_data_helper(jobs)
@@ -48,9 +52,33 @@ def low_rated_api():
 
 @app.route("/api/applied")
 def applied_api():
-    print("applied table call")
     jobs = db_helper.populate_table_call("applied")
     data = db_helper.job_data_helper(jobs)
     return jsonify(data), 200
 
-app.run()
+@app.route("/api/apply/<table>/<row_id>", methods=["POST"])
+def apply_job(table, row_id):
+    data = db_helper.get_row_by_id(table, row_id)
+    applied = db_helper.insert_into_applied(data)
+    if applied:
+        db_helper.remove_row(table, row_id)
+        return "", 200
+
+@app.route("/api/remove/<table>/<row_id>", methods=["POST"])
+def delete_row(table, row_id):
+    try:
+        db_helper.remove_row(table, row_id)
+        return "", 200
+    except Exception as e:
+        print("ERROR")
+        print(e)
+        return "", 400
+
+@app.route("/api/update-data", methods=["POST"])
+def match_api():
+    for title in config['job_titles']:
+        print(f"Running search for {title}")
+        main.run_matching(title)
+    return "", 200
+
+app.run(debug=True)
