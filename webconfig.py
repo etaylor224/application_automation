@@ -1,12 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import db_helper
-import yaml
 import main
 
 app = Flask(__name__)
-
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
 
 @app.route("/", methods=["GET", "POST"])
 def home_page():
@@ -76,9 +72,13 @@ def delete_row(table, row_id):
 
 @app.route("/api/update-data", methods=["POST"])
 def match_api():
-    for title in config['job_titles']:
-        print(f"Running search for {title}")
-        main.run_matching(title)
+    search_data = db_helper.populate_table_call("searchquery")
+    for row in search_data:
+        if row[2] != None or "":
+            query = f"{row[1]} in {row[2]}"
+        else:
+            query = f"{row[1]}"
+        main.run_matching(query)
     return "", 200
 
 app.run(debug=True)
