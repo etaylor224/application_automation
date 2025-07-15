@@ -19,13 +19,14 @@ def insert_into_search(position, location):
     VALUES(%s, %s) RETURNING id""", (position, location))
             return cur.fetchone()[0]
 
+
 def insert_data(table: str, data: list):
     with psy.connect(_pg_url) as conn:
         with conn.cursor() as cur:
             try:
                 for entry in data:
                     already_exists = check_for_duplicates(cur, table, entry)
-                    if already_exists == False:
+                    if not already_exists:
                         print("not in db")
                         execute_batch(cur,
                                       f"""
@@ -60,51 +61,41 @@ def insert_data(table: str, data: list):
                 print("Error")
                 print(e)
 
+
 def insert_into_applied(data: list):
     with psy.connect(_pg_url) as conn:
         with conn.cursor() as cur:
             try:
-                for entry in data:
-                    already_exists = check_for_duplicates(cur, "applied", entry)
-                    if already_exists == False:
-                        print("not in db")
-                        execute_batch(cur,
-                                      """
-                            INSERT INTO applied(
-                            job_title,
-                            employer_name,
-                            employer_web,
-                            employment_type,
-                            publisher,
-                            apply_link,
-                            job_description,
-                            remote,
-                            score)          
-
-                            VALUES( 
-                            %(job_title)s,
-                            %(employer_name)s, 
-                            %(employer_web)s,
-                            %(employment_type)s,
-                            %(publisher)s,
-                            %(apply_link)s,
-                            %(job_description)s,
-                            %(remote)s,
-                            %(score)s
-                            )
-                            """,
-                                      data)
-                        conn.commit()
-                    else:
-                        print("Entry exists")
+                drop_old_id = data[0][1:]
+                cur.execute(
+                              """
+                    INSERT INTO applied(
+                    job_title,
+                    employer_name,
+                    employer_web,
+                    employment_type,
+                    publisher,
+                    apply_link,
+                    job_description,
+                    remote,
+                    score)
+                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """, drop_old_id)
+                conn.commit()
+                print("INSERTED")
+                return True
             except Exception as e:
                 print("Error")
                 print(e)
 
 
-def remove_row():
-    #TODO this will be a call to remove a tow
-    pass
+def remove_row(table: str, row_id: int):
+    with psy.connect(_pg_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+            DELETE FROM {table} WHERE id = %s
+            """, row_id)
+        conn.commit()
 
 
 def populate_table_call(table):
@@ -114,6 +105,13 @@ def populate_table_call(table):
             cur.execute(f"SELECT * FROM public.{table}")
             data = cur.fetchall()
             return data
+
+
+def get_row_by_id(table: str, row_id: int):
+    with psy.connect(_pg_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT * FROM public.{table} WHERE id = %s", row_id)
+            return cur.fetchall()
 
 
 def check_for_duplicates(conn, table: str, data: dict):
@@ -159,3 +157,21 @@ def job_data_helper(data):
             data_dict[column_names[i]] = rows[i]
         cleaned.append(data_dict)
     return cleaned
+
+
+def positions_data_helper(data):
+    column_names = [
+        "id",
+        "query",
+        "location",
+    ]
+
+    cleaned = list()
+    for entry in data:
+        rows = entry
+        data_dict = dict()
+        for i in range(len(column_names)):
+            data_dict[column_names[i]] = rows[i]
+        cleaned.append(data_dict)
+    return cleaned
+
