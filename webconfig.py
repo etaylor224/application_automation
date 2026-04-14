@@ -53,7 +53,7 @@ def applied_api():
     return jsonify(data), 200
 
 @app.route("/api/apply/<table>/<row_id>", methods=["POST"])
-def apply_job(table, row_id):
+def apply_job(table, row_id: int):
     data = db_helper.get_row_by_id(table, row_id)
     applied = db_helper.insert_into_applied(data)
     if applied:
@@ -61,7 +61,7 @@ def apply_job(table, row_id):
         return "", 200
 
 @app.route("/api/remove/<table>/<row_id>", methods=["POST"])
-def delete_row(table, row_id):
+def delete_row(table, row_id: int):
     try:
         db_helper.remove_row(table, row_id)
         return "", 200
@@ -81,4 +81,5 @@ def match_api():
         main.run_matching(query)
     return "", 200
 
-app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)

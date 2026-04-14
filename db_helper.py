@@ -170,3 +170,157 @@ def positions_data_helper(data):
             data_dict[column_names[i]] = rows[i]
         cleaned.append(data_dict)
     return cleaned
+
+
+#TODO Remove possible unused funcs
+
+def insert_into_low(data: list):
+    with psy.connect(_pg_url) as conn:
+        with conn.cursor() as cur:
+            try:
+                for entry in data:
+                    already_exists = check_for_duplicates(cur, "low_results", entry)
+                    if already_exists == False:
+                        print("not in db")
+                        execute_batch(cur,
+                                      """
+                            INSERT INTO low_results(
+                            job_title,
+                            employer_name,
+                            employer_web,
+                            employment_type,
+                            publisher,
+                            apply_link,
+                            job_description,
+                            remote,
+                            score)          
+
+                            VALUES( 
+                            %(job_title)s,
+                            %(employer_name)s, 
+                            %(employer_web)s,
+                            %(employment_type)s,
+                            %(publisher)s,
+                            %(apply_link)s,
+                            %(job_description)s,
+                            %(remote)s,
+                            %(score)s
+                            )
+                            """,
+                                      data)
+                        conn.commit()
+                    else:
+                        print("Entry exists")
+            except Exception as e:
+                print("Error")
+                print(e)
+
+
+def insert_into_high(data: list):
+    with psy.connect(_pg_url) as conn:
+        with conn.cursor() as cur:
+            try:
+                for entry in data:
+                    already_exists = check_for_duplicates(cur, "high_results", entry)
+                    if already_exists == False:
+                        print("not in db")
+                        execute_batch(cur,
+                                      """
+                            INSERT INTO high_results(
+                            job_title,
+                            employer_name,
+                            employer_web,
+                            employment_type,
+                            publisher,
+                            apply_link,
+                            job_description,
+                            remote,
+                            score)          
+
+                            VALUES( 
+                            %(job_title)s,
+                            %(employer_name)s, 
+                            %(employer_web)s,
+                            %(employment_type)s,
+                            %(publisher)s,
+                            %(apply_link)s,
+                            %(job_description)s,
+                            %(remote)s,
+                            %(score)s
+                            )
+                            """,
+                                      data)
+                        conn.commit()
+                    else:
+                        print("Entry exists")
+            except Exception as e:
+                print("Error")
+                print(e)
+
+
+async def check_tables(conn, table):
+    query = f"""SELECT EXISTS ( 
+    SELECT 1 
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_name = '{table}')
+"""
+    search = await conn.fetch(query)
+    if search == False:
+        print(f"Creating table {table}")
+        return False
+
+    else:
+        print(f"Table {table} exists")
+        return True
+
+
+async def create_tables():
+    table_and_query = {
+        "searchquery_table": """
+        CREATE TABLE searchquery(
+            id integer PRIMARY KEY,
+            query character varying(50),
+            location character varying(50)
+        )
+    """,
+        "low_result_table": """
+    CREATE TABLE low_results(
+    id integer PRIMARY KEY, 
+    job_title character varying(100),
+    employer_name character varying (512),
+    employer_web character varying (512),
+    employment_type character varying (100),
+    publisher character varying (150),
+    apply_link character varying(1024),
+    job_description text,
+    remote boolean,
+    score real)
+    """,
+        "high_result_table": """
+    CREATE TABLE high_results(
+    id integer PRIMARY KEY, 
+    job_title character varying(100),
+    employer_name character varying (512),
+    employer_web character varying (512),
+    employment_type character varying (100),
+    publisher character varying (150),
+    apply_link character varying(1024),
+    job_description text,
+    remote boolean,
+    score real)
+    """,
+        "applied_table": """
+    CREATE TABLE applied(
+    id integer PRIMARY KEY, 
+    job_title character varying(100),
+    employer_name character varying (512),
+    employer_web character varying (512),
+    employment_type character varying (100),
+    publisher character varying (150),
+    apply_link character varying(1024),
+    job_description text,
+    remote boolean,
+    score real)
+    """
+    }
